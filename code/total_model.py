@@ -20,15 +20,18 @@ train_loader=DataLoader(dataset=train_datasets,batch_size=64)
 test_loader=DataLoader(dataset=test_datasets,batch_size=64)
 
 model=My_Layers()
+if torch.cuda.is_available():
+    model=model.cuda()
 
 loss_func=nn.CrossEntropyLoss()#损失函数
+loss_func=loss_func.cuda()
+
 optimizer=torch.optim.SGD(model.parameters(),lr=1e-2)#优化器
 
 test_step=1
 train_step=1
 epoch=10
 writer=SummaryWriter(log_dir="log")
-
 for i in range(epoch):
     total_test_loss = 0
     total_train_loss = 0
@@ -38,8 +41,11 @@ for i in range(epoch):
     model.train()#只对少部分的模型适用
     for data in train_loader:
         img,target=data
-        output=model(img)
-        loss=loss_func(output,target)
+        if torch.cuda.is_available():
+            img=img.cuda()
+            target=target.cuda()
+        output = model(img)
+        loss = loss_func(output, target)
         total_train_loss+=loss
 
         #优化的统一格式
@@ -59,7 +65,10 @@ for i in range(epoch):
     with torch.no_grad():#没有梯度变化
         for data in test_loader:
             img,target=data
-            output=model(img)
+            if torch.cuda.is_available():
+                img=img.cuda()
+                target=target.cuda()
+            output = model(img)
             loss=loss_func(output,target)
             total_test_loss+=loss
             accuracy=(output.argmax(1)==target).sum()#将每个图像对比后相加
